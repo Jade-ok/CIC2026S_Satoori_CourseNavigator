@@ -1,4 +1,12 @@
-import { courses } from '../data/courses'
+import { courses, type ResourceType } from '../data/courses'
+
+const resourceTypeStyle: Record<ResourceType, { bg: string; color: string }> = {
+  'Conference':    { bg: '#EDE9FE', color: '#5B21B6' },
+  'Hackathon':     { bg: '#FEE2E2', color: '#991B1B' },
+  'Community':     { bg: '#D1FAE5', color: '#065F46' },
+  'Online Course': { bg: '#E0F4FD', color: '#0369A1' },
+  'Workshop':      { bg: '#FEF3C7', color: '#92400E' },
+}
 
 const REDDIT_LOGO = `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="display:block">
   <circle cx="10" cy="10" r="10" fill="#FF4500"/>
@@ -82,6 +90,40 @@ export default function DetailPanel({ courseId, onClose }: Props) {
                 ))}
               </div>
             </div>
+
+            {course.resources.length > 0 && (
+              <>
+                <div className="divider" />
+                <div className="resources-section">
+                  <div className="resources-header">
+                    <span className="resources-header-icon">🔗</span>
+                    <span className="resources-title">Related Events & Resources</span>
+                  </div>
+                  <div className="resource-list">
+                    {course.resources.map((r, i) => {
+                      const rs = resourceTypeStyle[r.type]
+                      return (
+                        <div key={i} className="resource-item">
+                          <div className="resource-top">
+                            <span className="resource-icon">{r.icon}</span>
+                            <div className="resource-info">
+                              <div className="resource-title-row">
+                                <span className="resource-name">{r.title}</span>
+                                <span className="resource-type-badge" style={{ background: rs.bg, color: rs.color }}>
+                                  {r.type}
+                                </span>
+                              </div>
+                              <div className="resource-meta">{r.meta}</div>
+                            </div>
+                          </div>
+                          <div className="resource-desc">{r.desc}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </>
       )}

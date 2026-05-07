@@ -15,6 +15,7 @@ export default function ChatSidebar({ onRevealMap }: Props) {
   const [showUpload, setShowUpload] = useState(false)
   const [inputVal, setInputVal] = useState('')
   const chatStep = useRef(0)
+  const hasStarted = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -109,8 +110,10 @@ export default function ChatSidebar({ onRevealMap }: Props) {
     el.style.height = Math.min(el.scrollHeight, 80) + 'px'
   }
 
-  // Start chat on mount
+  // Start chat on mount (guard against StrictMode double-invoke)
   useEffect(() => {
+    if (hasStarted.current) return
+    hasStarted.current = true
     setTimeout(() => {
       addAI("Hey there! 👋 I'm your UBC AI Course Coordinator.<br>I'll help you find the best course path for your goals.")
       setTimeout(() => {

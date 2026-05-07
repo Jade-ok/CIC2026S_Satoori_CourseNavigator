@@ -4,6 +4,17 @@ export interface Review {
   text: string
 }
 
+export type ResourceType = 'Conference' | 'Hackathon' | 'Community' | 'Online Course' | 'Workshop'
+
+export interface Resource {
+  icon: string
+  title: string
+  type: ResourceType
+  desc: string
+  meta: string        // e.g. "Dec 2025 · Vancouver" or "Self-paced · Free"
+  url?: string
+}
+
 export interface Course {
   code: string
   name: string
@@ -15,6 +26,7 @@ export interface Course {
   prereqs: string[]
   unlocks: string[]
   reviews: Review[]
+  resources: Resource[]
 }
 
 export const courses: Record<string, Course> = {
@@ -27,6 +39,7 @@ export const courses: Record<string, Course> = {
       { user: 'u/cs_student_ubc', upvotes: 142, text: "Racket feels weird at first but you'll get used to it. The workload is real — don't procrastinate. TAs are super helpful, use office hours!" },
       { user: 'u/firstyear_cs', upvotes: 89, text: 'Best intro course for learning how to think like a programmer. The functional mindset sticks with you throughout your degree.' },
     ],
+    resources: [],
   },
   cpsc121: {
     code: 'CPSC 121', name: 'Models of Computation',
@@ -37,6 +50,7 @@ export const courses: Record<string, Course> = {
       { user: 'u/mathcs_fan', upvotes: 76, text: 'Heavy on discrete math and proofs. Having a discrete math background helps a lot. The labs are actually fun though.' },
       { user: 'u/ubccs_2024', upvotes: 54, text: 'Difficulty varies a lot by section and instructor. Choose your section wisely!' },
     ],
+    resources: [],
   },
   math100: {
     code: 'MATH 100', name: 'Differential Calculus',
@@ -46,6 +60,7 @@ export const courses: Record<string, Course> = {
     reviews: [
       { user: 'u/stem_ubc', upvotes: 63, text: "Not too bad if you have high school calc. Stay on top of WeBWorK assignments and you'll be fine." },
     ],
+    resources: [],
   },
   math101: {
     code: 'MATH 101', name: 'Integral Calculus',
@@ -56,6 +71,7 @@ export const courses: Record<string, Course> = {
       { user: 'u/calculus_survivor', upvotes: 91, text: 'Noticeably harder than MATH 100. The series portion trips everyone up. Final exam is worth a lot — study accordingly.' },
       { user: 'u/ubc_math_major', upvotes: 48, text: 'The integration applications section is genuinely useful later. Good professor made a big difference for me.' },
     ],
+    resources: [],
   },
   cpsc210: {
     code: 'CPSC 210', name: 'Software Construction',
@@ -67,6 +83,29 @@ export const courses: Record<string, Course> = {
       { user: 'u/softeng_path', upvotes: 134, text: 'High workload but you actually learn real software dev practices. Worth every hour.' },
       { user: 'u/cs_sophomore', upvotes: 72, text: 'Pay attention to design patterns — they seem abstract now but come up in every job interview later.' },
     ],
+    resources: [
+      {
+        icon: '🏆',
+        title: 'nwHacks',
+        type: 'Hackathon',
+        desc: "Western Canada's largest hackathon hosted at UBC — great first hackathon to apply your CPSC 210 skills on a real project.",
+        meta: 'Jan 2026 · UBC Vancouver',
+      },
+      {
+        icon: '🐙',
+        title: 'GitHub Student Developer Pack',
+        type: 'Workshop',
+        desc: 'Free access to 100+ developer tools including GitHub Copilot, JetBrains IDEs, and cloud credits. Essential for any CS student.',
+        meta: 'Ongoing · Free with .edu email',
+      },
+      {
+        icon: '🤝',
+        title: 'UBC BizTech',
+        type: 'Community',
+        desc: "UBC's largest tech club — hosts workshops, case competitions, and networking events connecting students with industry.",
+        meta: 'Ongoing · UBC Vancouver',
+      },
+    ],
   },
   cpsc221: {
     code: 'CPSC 221', name: 'Basic Algorithms & Data Structures',
@@ -77,6 +116,29 @@ export const courses: Record<string, Course> = {
       { user: 'u/algo_grind', upvotes: 203, text: 'Essential for coding interviews. Assignment difficulty is inconsistent but the content is gold. Brush up on C++ beforehand.' },
       { user: 'u/ubccs_3rd', upvotes: 158, text: 'Hardest course I had in 2nd year but the most important. Everything you learn here shows up in tech interviews.' },
     ],
+    resources: [
+      {
+        icon: '💻',
+        title: 'LeetCode Weekly Contest',
+        type: 'Community',
+        desc: 'Weekly online algorithm contests to sharpen your problem-solving. CPSC 221 content maps directly to most medium/hard problems.',
+        meta: 'Every Sunday · Online · Free',
+      },
+      {
+        icon: '🏆',
+        title: 'ICPC North America Regional',
+        type: 'Conference',
+        desc: 'International Collegiate Programming Contest — team-based algorithm competition. UBC fields competitive teams every year.',
+        meta: 'Nov 2025 · Regional sites · Free',
+      },
+      {
+        icon: '🎓',
+        title: 'UBC ACM Student Chapter',
+        type: 'Community',
+        desc: 'Hosts algorithm workshops, mock interview sessions, and practice contests. Perfect companion while taking CPSC 221.',
+        meta: 'Ongoing · UBC Vancouver',
+      },
+    ],
   },
   math200: {
     code: 'MATH 200', name: 'Calculus III',
@@ -85,6 +147,15 @@ export const courses: Record<string, Course> = {
     prereqs: ['MATH 101'], unlocks: ['MATH 301', 'CPSC 340'],
     reviews: [
       { user: 'u/multivar_pain', upvotes: 67, text: 'Visualizing 3D space is rough at first. Watch YouTube videos alongside lectures. The final carries a lot of weight.' },
+    ],
+    resources: [
+      {
+        icon: '📐',
+        title: '3Blue1Brown — Calculus Series',
+        type: 'Online Course',
+        desc: 'Stunning visual explanations of multivariable calculus concepts. Highly recommended to watch alongside MATH 200 lectures.',
+        meta: 'Self-paced · Free · YouTube',
+      },
     ],
   },
   math221: {
@@ -95,6 +166,22 @@ export const courses: Record<string, Course> = {
     reviews: [
       { user: 'u/linearalg_fan', upvotes: 241, text: 'If you want to do ML, this course is non-negotiable. It feels abstract at first but suddenly everything clicks when you start CPSC 340.' },
       { user: 'u/math_cs_double', upvotes: 118, text: '3Blue1Brown on YouTube is a perfect companion to this course. Builds incredible intuition for the material.' },
+    ],
+    resources: [
+      {
+        icon: '📐',
+        title: '3Blue1Brown — Essence of Linear Algebra',
+        type: 'Online Course',
+        desc: '16-episode visual series that builds geometric intuition for everything in MATH 221. Watch this and the course will click immediately.',
+        meta: 'Self-paced · Free · YouTube',
+      },
+      {
+        icon: '📊',
+        title: 'fast.ai — Practical Deep Learning',
+        type: 'Online Course',
+        desc: 'Shows you exactly how MATH 221 concepts power real neural networks. Great motivation for why linear algebra matters in ML.',
+        meta: 'Self-paced · Free',
+      },
     ],
   },
   cpsc340: {
@@ -107,6 +194,36 @@ export const courses: Record<string, Course> = {
       { user: 'u/bigtech_intern', upvotes: 287, text: 'Got a Google internship and literally everything in the interviews came from this course. Life-changing class.' },
       { user: 'u/gradschool_bound', upvotes: 195, text: 'Pace is fast. Lock in MATH 221 before this or you will struggle. Professor is incredibly passionate about the material.' },
     ],
+    resources: [
+      {
+        icon: '🧠',
+        title: 'NeurIPS 2025',
+        type: 'Conference',
+        desc: "The world's top ML conference. Attend workshops and talks to see where the field is heading — directly relevant to CPSC 340 topics.",
+        meta: 'Dec 2025 · Vancouver Convention Centre',
+      },
+      {
+        icon: '🏆',
+        title: 'Kaggle Competitions',
+        type: 'Community',
+        desc: 'Apply CPSC 340 algorithms on real-world datasets. Even top 30% finishes look great on a resume and build intuition fast.',
+        meta: 'Ongoing · Online · Free',
+      },
+      {
+        icon: '🤖',
+        title: 'UBC AI Club',
+        type: 'Community',
+        desc: 'Weekly paper reading sessions, project showcases, and industry speaker events. Great place to find teammates for ML projects.',
+        meta: 'Ongoing · UBC Vancouver',
+      },
+      {
+        icon: '📊',
+        title: 'fast.ai — Practical Deep Learning',
+        type: 'Online Course',
+        desc: 'Hands-on complement to CPSC 340 — get neural networks running in PyTorch while the course covers the math underneath.',
+        meta: 'Self-paced · Free',
+      },
+    ],
   },
   cpsc330: {
     code: 'CPSC 330', name: 'Applied Machine Learning',
@@ -117,6 +234,29 @@ export const courses: Record<string, Course> = {
       { user: 'u/practical_ml', upvotes: 176, text: 'Way more approachable than CPSC 340 — less math, more Python. Assignments feel like Kaggle competitions which is awesome.' },
       { user: 'u/datascience_path', upvotes: 143, text: 'Perfect if you want to get into data science. You build a real portfolio of projects by the end.' },
     ],
+    resources: [
+      {
+        icon: '🏆',
+        title: 'Kaggle Learn',
+        type: 'Online Course',
+        desc: 'Free micro-courses on pandas, scikit-learn, and ML pipelines — perfectly aligned with CPSC 330 content. Great for building portfolio notebooks.',
+        meta: 'Self-paced · Free',
+      },
+      {
+        icon: '📅',
+        title: 'Vancouver Data Science Meetup',
+        type: 'Community',
+        desc: 'Monthly meetup with industry talks and project demos. Good way to see what applied ML looks like in production at local companies.',
+        meta: 'Monthly · Vancouver · Free',
+      },
+      {
+        icon: '🧪',
+        title: 'DemystifyML Workshop',
+        type: 'Workshop',
+        desc: 'UBC-hosted half-day workshop covering the full ML lifecycle from data cleaning to model deployment. Beginner-friendly.',
+        meta: 'Feb 2026 · UBC Vancouver · Free',
+      },
+    ],
   },
   cpsc422: {
     code: 'CPSC 422', name: 'Intelligent Systems',
@@ -126,6 +266,22 @@ export const courses: Record<string, Course> = {
     reviews: [
       { user: 'u/ai_senior', upvotes: 84, text: 'Really interesting once you have the prereqs. Project-heavy course so find good teammates early.' },
     ],
+    resources: [
+      {
+        icon: '🧠',
+        title: 'AAAI 2026',
+        type: 'Conference',
+        desc: "Top academic AI conference covering symbolic reasoning, planning, and constraint satisfaction — the exact topics in CPSC 422.",
+        meta: 'Feb 2026 · Philadelphia · Student rates available',
+      },
+      {
+        icon: '🤝',
+        title: 'AI Safety Vancouver',
+        type: 'Community',
+        desc: 'Reading group focused on AI alignment and safety research. Relevant if you\'re heading toward graduate research in intelligent systems.',
+        meta: 'Bi-weekly · Vancouver · Free',
+      },
+    ],
   },
   cpsc440: {
     code: 'CPSC 440', name: 'Advanced Machine Learning',
@@ -134,6 +290,29 @@ export const courses: Record<string, Course> = {
     prereqs: ['CPSC 340'], unlocks: ['CPSC 550'],
     reviews: [
       { user: 'u/deep_learner', upvotes: 156, text: "Basically CPSC 340 on steroids. Heavy reading load with papers but you'll be at the research frontier. Recommended for grad school applicants." },
+    ],
+    resources: [
+      {
+        icon: '🧠',
+        title: 'NeurIPS 2025',
+        type: 'Conference',
+        desc: 'Most CPSC 440 paper readings come directly from NeurIPS proceedings. Attending is transformative for understanding the research frontier.',
+        meta: 'Dec 2025 · Vancouver Convention Centre',
+      },
+      {
+        icon: '🔬',
+        title: 'UBC ML Research Group (MLRG)',
+        type: 'Community',
+        desc: 'Weekly research talks by UBC faculty and students. Taking CPSC 440 makes you ready to contribute to or collaborate with MLRG projects.',
+        meta: 'Weekly · UBC Vancouver · Free',
+      },
+      {
+        icon: '📄',
+        title: 'Papers with Code',
+        type: 'Online Course',
+        desc: 'Browse state-of-the-art ML papers with reproducible code. Pairs perfectly with CPSC 440\'s paper-reading curriculum.',
+        meta: 'Ongoing · Free · paperswithcode.com',
+      },
     ],
   },
 }
