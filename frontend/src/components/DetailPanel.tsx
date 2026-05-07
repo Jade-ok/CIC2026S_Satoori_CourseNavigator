@@ -1,4 +1,6 @@
-import { courses, type ResourceType } from '../data/courses'
+import { type Course } from '../api/courses'
+
+type ResourceType = Course['resources'][0]['type']
 
 const resourceTypeStyle: Record<ResourceType, { bg: string; color: string }> = {
   'Conference':    { bg: '#EDE9FE', color: '#5B21B6' },
@@ -28,9 +30,10 @@ const categoryStyle: Record<string, { bg: string; color: string }> = {
 interface Props {
   courseId: string | null
   onClose: () => void
+  courses: Record<string, Course>
 }
 
-export default function DetailPanel({ courseId, onClose }: Props) {
+export default function DetailPanel({ courseId, onClose, courses }: Props) {
   const course = courseId ? courses[courseId] : null
   const style = course ? (categoryStyle[course.category] ?? { bg: '#F3F4F6', color: '#6B7280' }) : null
 
@@ -56,14 +59,14 @@ export default function DetailPanel({ courseId, onClose }: Props) {
 
             <div className="detail-section">Prerequisites</div>
             <div className="tag-list">
-              {course.prereqs.map(p => <span key={p} className="dtag">{p}</span>)}
+              {course.prereqs.map((p: string) => <span key={p} className="dtag">{p}</span>)}
             </div>
 
             {course.unlocks.length > 0 && (
               <>
                 <div className="detail-section">Unlocks After Completion</div>
                 <div className="tag-list">
-                  {course.unlocks.map(u => <span key={u} className="dtag unlock">{u}</span>)}
+                  {course.unlocks.map((u: string) => <span key={u} className="dtag unlock">{u}</span>)}
                 </div>
               </>
             )}
@@ -76,7 +79,7 @@ export default function DetailPanel({ courseId, onClose }: Props) {
                 <div className="reddit-title">Student Reviews from r/UBC</div>
               </div>
               <div className="review-list">
-                {course.reviews.map((r, i) => (
+                {course.reviews.map((r: any, i: number) => (
                   <div key={i} className="review-item">
                     <div className="review-meta">
                       <div className="review-mini-logo" dangerouslySetInnerHTML={{ __html: REDDIT_MINI }} />
@@ -100,7 +103,7 @@ export default function DetailPanel({ courseId, onClose }: Props) {
                     <span className="resources-title">Related Events & Resources</span>
                   </div>
                   <div className="resource-list">
-                    {course.resources.map((r, i) => {
+                    {course.resources.map((r: any, i: number) => {
                       const rs = resourceTypeStyle[r.type]
                       return (
                         <div key={i} className="resource-item">

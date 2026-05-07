@@ -2,10 +2,14 @@ import { useState } from 'react'
 import ChatSidebar from './components/ChatSidebar'
 import CourseMap from './components/CourseMap'
 import DetailPanel from './components/DetailPanel'
+import { courses as staticCourses } from './data/courses'
+import type { ChatResponse } from './api/courses'
 
 export default function App() {
   const [mapRevealed, setMapRevealed] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
+  const [completedCourses, setCompletedCourses] = useState<string[]>([])
+  const [courseStates, setCourseStates] = useState<Record<string, string>>({})
 
   return (
     <>
@@ -25,14 +29,29 @@ export default function App() {
       </header>
 
       <div className="app">
-        <ChatSidebar onRevealMap={() => setMapRevealed(true)} />
+        <ChatSidebar
+          onRevealMap={() => setMapRevealed(true)}
+          completedCourses={completedCourses}
+          onChatResponse={(response: ChatResponse) => {
+            const completed = Object.entries(response.course_states)
+              .filter(([, v]) => v === 'completed')
+              .map(([k]) => k)
+            setCompletedCourses(completed)
+            setCourseStates(response.course_states)
+          }}
+        />
         <main className="main">
           <div className="main-grid-bg" />
-          <CourseMap revealed={mapRevealed} onCourseClick={setSelectedCourse} />
+          <CourseMap
+            revealed={mapRevealed}
+            onCourseClick={setSelectedCourse}
+            courses={staticCourses as any}
+            courseStates={courseStates}
+          />
         </main>
       </div>
 
-      <DetailPanel courseId={selectedCourse} onClose={() => setSelectedCourse(null)} />
+      <DetailPanel courseId={selectedCourse} onClose={() => setSelectedCourse(null)} courses={staticCourses as any} />
     </>
   )
 }

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"/Users/jade/AWS Hackathon/CIC2026S_Satoori\" checkout -b br_jade_backend)",
+      "Bash(git -C \"/Users/jade/AWS Hackathon/CIC2026S_Satoori\" status --short)",
+      "Bash(git -C \"/Users/jade/AWS Hackathon/CIC2026S_Satoori\" diff --stat)",
+      "Bash(git -C \"/Users/jade/AWS Hackathon/CIC2026S_Satoori\" add backend/.env.example backend/main.py backend/requirements.txt)",
+      "Bash(git -C '/Users/jade/AWS Hackathon/CIC2026S_Satoori' commit -m ' *)",
+      "Bash(npm run *)"
+    ]
+  }
+}

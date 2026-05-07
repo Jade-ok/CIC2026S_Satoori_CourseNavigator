@@ -1,13 +1,17 @@
 import { useEffect, useRef } from 'react'
-import { courses, connections, nodePositions } from '../data/courses'
+import { connections, nodePositions } from '../data/courses'
+import { type Course } from '../api/courses'
 
 interface Props {
   revealed: boolean
   onCourseClick: (id: string) => void
+  courses: Record<string, Course & { status?: string; badge?: string }>
+  courseStates?: Record<string, string>
 }
 
-export default function CourseMap({ revealed, onCourseClick }: Props) {
+export default function CourseMap({ revealed, onCourseClick, courses, courseStates = {} }: Props) {
   const ghostSvgRef = useRef<SVGSVGElement>(null)
+  console.log('🗺️ CourseMap rendered, revealed:', revealed, 'courses count:', Object.keys(courses).length, 'courseStates:', courseStates)
 
   useEffect(() => {
     const drawGhostLines = () => {
@@ -105,7 +109,9 @@ export default function CourseMap({ revealed, onCourseClick }: Props) {
               const x1 = fp[0] + 145, y1 = fp[1] + 35
               const x2 = tp[0],       y2 = tp[1] + 35
               const mx = (x1 + x2) / 2
-              const active = courses[to]?.status === 'recommended' || courses[to]?.status === 'available'
+              const toCode = courses[to]?.code
+              const toState = toCode ? courseStates[toCode] : undefined
+              const active = (toState ?? courses[to]?.status) === 'recommended' || (toState ?? courses[to]?.status) === 'available'
               return (
                 <path key={i}
                   d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
@@ -138,16 +144,17 @@ export default function CourseMap({ revealed, onCourseClick }: Props) {
           {Object.entries(nodePositions).map(([id, [left, top]]) => {
             const course = courses[id]
             if (!course) return null
+            const status = courseStates[course.code] || 'locked'
             return (
               <div
                 key={id}
-                className={`course-node ${course.status}`}
+                className={`course-node ${status}`}
                 style={{ left, top }}
                 onClick={() => onCourseClick(id)}
               >
                 <div className="node-code">{course.code}</div>
                 <div className="node-name">{course.name}</div>
-                <div className="node-badge">{course.badge}</div>
+                <div className="node-badge">{status === 'completed' ? '✓' : ''}</div>
               </div>
             )
           })}
