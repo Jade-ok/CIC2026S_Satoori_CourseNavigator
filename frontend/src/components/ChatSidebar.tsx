@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { chat, uploadTranscript, type ChatResponse } from '../api/courses'
 
 interface Message {
   type: 'ai' | 'user'
@@ -8,13 +9,16 @@ interface Message {
 
 interface Props {
   onRevealMap: () => void
+  completedCourses: string[]
+  onChatResponse: (response: ChatResponse) => void
+  onTranscriptParsed: (courses: string[]) => void
 }
 
-export default function ChatSidebar({ onRevealMap }: Props) {
+export default function ChatSidebar({ onRevealMap, completedCourses, onChatResponse, onTranscriptParsed }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [showUpload, setShowUpload] = useState(false)
   const [inputVal, setInputVal] = useState('')
-  const chatStep = useRef(0)
+  const [loading, setLoading] = useState(false)
   const hasStarted = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -31,62 +35,29 @@ export default function ChatSidebar({ onRevealMap }: Props) {
     setMessages(prev => [...prev, { type: 'user', content }])
   }
 
-  const removeTyping = () => {
-    setMessages(prev => prev.filter(m => !m.isTyping))
-  }
-
-  const runAnalysis = () => {
-    addAI('AI Coordinator is planning your recommended path . . . 🔍', true)
-    setTimeout(() => {
-      removeTyping()
-      setMessages(prev => [
-        ...prev,
-        { type: 'ai', content: "✅ Analysis complete! Based on your completed courses and goals, here's what I recommend:" },
-      ])
-      onRevealMap()
-    }, 2400)
-    setTimeout(() => {
-      setMessages(prev => [
-        ...prev,
-        { type: 'ai', content: "📌 <strong>Top priorities for next semester:</strong><br><br>1️⃣ <strong>MATH 221</strong> — Linear algebra is the math backbone of ML<br>2️⃣ <strong>CPSC 221</strong> — Unlocks most upper-level CS courses<br>3️⃣ <strong>CPSC 330</strong> — Hands-on ML with Python, lower barrier to entry" },
-      ])
-    }, 3600)
-    setTimeout(() => {
-      setMessages(prev => [
-        ...prev,
-        { type: 'ai', content: "🎯 After those three, <strong>CPSC 340 (Machine Learning)</strong> opens up — the most career-relevant course for big tech interviews.<br><br>Check the map — yellow courses are your <strong>AI-recommended picks</strong>! 👉" },
-      ])
-      chatStep.current = 4
-    }, 4900)
-  }
-
-  const processStep = (_text: string) => {
-    if (chatStep.current === 1) {
-      chatStep.current = 2
-      setShowUpload(false)
-      setTimeout(() => {
-        addAI('For a more accurate analysis, please <strong>upload your transcript PDF</strong>, or type your completed courses in the chat. 📋')
-        setShowUpload(true)
-      }, 500)
-    } else if (chatStep.current === 2) {
-      chatStep.current = 3
-      setShowUpload(false)
-      setTimeout(runAnalysis, 300)
-    } else if (chatStep.current === 4) {
-      setTimeout(() => {
-        addAI('Feel free to ask anything else! Click any course on the map to see details and real student reviews. 🗺️')
-      }, 400)
-    }
-  }
-
-  const sendMessage = () => {
+  const sendMessage = async () => {
     const text = inputVal.trim()
-    if (!text) return
+    if (!text || loading) return
     setInputVal('')
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
     addUser(text)
     setShowUpload(false)
-    processStep(text)
+    setLoading(true)
+    addAI('AI Coordinator is analyzing . . . 🔍', true)
+
+    try {
+      const response = await chat(text, completedCourses)
+      setMessages(prev => prev.filter(m => !m.isTyping))
+      addAI(response.message)
+      onChatResponse(response)
+      onRevealMap()
+    } catch (error) {
+      setMessages(prev => prev.filter(m => !m.isTyping))
+      addAI('Sorry, something went wrong. Please try again. ❌')
+      console.error('Chat error:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleKey = (e: React.KeyboardEvent) => {
@@ -96,13 +67,28 @@ export default function ChatSidebar({ onRevealMap }: Props) {
     }
   }
 
-  const handlePDFUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePDFUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     setShowUpload(false)
     addUser(`📄 ${file.name}`)
-    chatStep.current = 3
-    setTimeout(runAnalysis, 300)
+    setLoading(true)
+    addAI('Parsing your transcript . . . 🔍', true)
+    try {
+      const courses = await uploadTranscript(file)
+      setMessages(prev => prev.filter(m => !m.isTyping))
+      if (courses.length === 0) {
+        addAI("Couldn't find any courses in this PDF. Try typing your completed courses instead. 📋")
+      } else {
+        onTranscriptParsed(courses)
+        addAI(`Found <strong>${courses.length} completed courses</strong>: ${courses.join(', ')}.<br><br>Now tell me your career goal and I'll build your personalized course map! 🎯`)
+      }
+    } catch {
+      setMessages(prev => prev.filter(m => !m.isTyping))
+      addAI('Failed to parse the PDF. Try typing your completed courses instead. ❌')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const autoResize = (el: HTMLTextAreaElement) => {
@@ -110,7 +96,6 @@ export default function ChatSidebar({ onRevealMap }: Props) {
     el.style.height = Math.min(el.scrollHeight, 80) + 'px'
   }
 
-  // Start chat on mount (guard against StrictMode double-invoke)
   useEffect(() => {
     if (hasStarted.current) return
     hasStarted.current = true
@@ -118,7 +103,7 @@ export default function ChatSidebar({ onRevealMap }: Props) {
       addAI("Hey there! 👋 I'm your UBC AI Course Coordinator.<br>I'll help you find the best course path for your goals.")
       setTimeout(() => {
         addAI('What\'s your career goal or area of interest?<div class="hint-text">e.g. "I want to become an AI/ML engineer, aiming for a big tech job after graduation. I prefer hands-on courses over heavy math."</div>')
-        chatStep.current = 1
+        setShowUpload(true)
       }, 900)
     }, 500)
   }, [])

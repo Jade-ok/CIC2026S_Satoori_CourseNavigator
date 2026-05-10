@@ -258,6 +258,14 @@ export const courses: Record<string, Course> = {
       },
     ],
   },
+  cpsc344: {
+    code: 'CPSC 344', name: 'Human Computer Interaction',
+    status: 'available', credits: 3, category: 'Available', badge: 'Available',
+    desc: 'Basic tools and techniques for a systematic approach to interface design, task analysis, analytic and empirical evaluation methods.',
+    prereqs: ['CPSC 210'], unlocks: [],
+    reviews: [],
+    resources: [],
+  },
   cpsc422: {
     code: 'CPSC 422', name: 'Intelligent Systems',
     status: 'locked', credits: 3, category: 'Locked', badge: '○ Prereq needed',
@@ -323,6 +331,7 @@ export const connections: [string, string][] = [
   ['math100', 'math101'], ['math101', 'math200'], ['math101', 'math221'],
   ['cpsc221', 'cpsc340'], ['math221', 'cpsc340'], ['math200', 'cpsc340'],
   ['cpsc210', 'cpsc330'],
+  ['cpsc210', 'cpsc344'],
   ['cpsc340', 'cpsc440'], ['cpsc221', 'cpsc422'],
 ]
 
@@ -330,5 +339,5 @@ export const nodePositions: Record<string, [number, number]> = {
   cpsc110: [20, 50],  cpsc121: [20, 170], math100: [20, 290], math101: [20, 390],
   cpsc210: [195, 50],
   cpsc221: [390, 50], math200: [390, 190], math221: [390, 315],
-  cpsc340: [595, 50], cpsc330: [595, 190], cpsc422: [595, 330], cpsc440: [595, 440],
+  cpsc340: [595, 50], cpsc330: [595, 190], cpsc344: [595, 330], cpsc422: [595, 450], cpsc440: [595, 560],
 }
