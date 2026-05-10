@@ -1,15 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ChatSidebar from './components/ChatSidebar'
 import CourseMap from './components/CourseMap'
 import DetailPanel from './components/DetailPanel'
-import { courses as staticCourses } from './data/courses'
-import type { ChatResponse } from './api/courses'
+import { getCourses, type Course, type ChatResponse } from './api/courses'
 
 export default function App() {
   const [mapRevealed, setMapRevealed] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
   const [completedCourses, setCompletedCourses] = useState<string[]>([])
   const [courseStates, setCourseStates] = useState<Record<string, string>>({})
+  const [courses, setCourses] = useState<Record<string, Course>>({})
+  const [loadingCourses, setLoadingCourses] = useState(true)
+
+  useEffect(() => {
+    getCourses()
+      .then((data) => setCourses(data))
+      .catch((err) => console.error('Failed to load courses:', err))
+      .finally(() => setLoadingCourses(false))
+  }, [])
 
   return (
     <>
@@ -39,19 +47,27 @@ export default function App() {
             setCompletedCourses(completed)
             setCourseStates(response.course_states)
           }}
+          onTranscriptParsed={setCompletedCourses}
         />
         <main className="main">
           <div className="main-grid-bg" />
-          <CourseMap
-            revealed={mapRevealed}
-            onCourseClick={setSelectedCourse}
-            courses={staticCourses as any}
-            courseStates={courseStates}
-          />
+          {loadingCourses ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#6B7280', fontSize: 14 }}>
+              Loading courses…
+            </div>
+          ) : (
+            <CourseMap
+              revealed={mapRevealed}
+              onCourseClick={setSelectedCourse}
+              courses={courses}
+              courseStates={courseStates}
+              completedCourses={completedCourses}
+            />
+          )}
         </main>
       </div>
 
-      <DetailPanel courseId={selectedCourse} onClose={() => setSelectedCourse(null)} courses={staticCourses as any} />
+      <DetailPanel courseId={selectedCourse} onClose={() => setSelectedCourse(null)} courses={courses} />
     </>
   )
 }

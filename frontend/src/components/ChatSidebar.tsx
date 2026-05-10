@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { chat, type ChatResponse } from '../api/courses'
+import { chat, uploadTranscript, type ChatResponse } from '../api/courses'
 
 interface Message {
   type: 'ai' | 'user'
@@ -11,9 +11,10 @@ interface Props {
   onRevealMap: () => void
   completedCourses: string[]
   onChatResponse: (response: ChatResponse) => void
+  onTranscriptParsed: (courses: string[]) => void
 }
 
-export default function ChatSidebar({ onRevealMap, completedCourses, onChatResponse }: Props) {
+export default function ChatSidebar({ onRevealMap, completedCourses, onChatResponse, onTranscriptParsed }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [showUpload, setShowUpload] = useState(false)
   const [inputVal, setInputVal] = useState('')
@@ -66,12 +67,28 @@ export default function ChatSidebar({ onRevealMap, completedCourses, onChatRespo
     }
   }
 
-  const handlePDFUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePDFUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     setShowUpload(false)
     addUser(`📄 ${file.name}`)
-    addAI('PDF uploaded! Type your completed courses (comma-separated) or ask me any questions about your course path. 📋')
+    setLoading(true)
+    addAI('Parsing your transcript . . . 🔍', true)
+    try {
+      const courses = await uploadTranscript(file)
+      setMessages(prev => prev.filter(m => !m.isTyping))
+      if (courses.length === 0) {
+        addAI("Couldn't find any courses in this PDF. Try typing your completed courses instead. 📋")
+      } else {
+        onTranscriptParsed(courses)
+        addAI(`Found <strong>${courses.length} completed courses</strong>: ${courses.join(', ')}.<br><br>Now tell me your career goal and I'll build your personalized course map! 🎯`)
+      }
+    } catch {
+      setMessages(prev => prev.filter(m => !m.isTyping))
+      addAI('Failed to parse the PDF. Try typing your completed courses instead. ❌')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const autoResize = (el: HTMLTextAreaElement) => {

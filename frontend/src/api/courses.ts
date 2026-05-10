@@ -5,13 +5,15 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 export interface Course {
   code: string
   name: string
-  desc: string
+  desc?: string
+  description?: string
   credits: number
-  category: string
+  level?: number
+  category?: string
   prereqs: string[]
-  unlocks: string[]
-  reviews: Array<{ user: string; text: string; upvotes: number }>
-  resources: Array<{
+  unlocks?: string[]
+  reviews?: Array<{ user: string; text: string; upvotes: number }>
+  resources?: Array<{
     icon: string
     title: string
     type: string
@@ -37,4 +39,13 @@ export async function chat(message: string, completedCourses: string[]): Promise
     completed_courses: completedCourses,
   })
   return response.data
+}
+
+export async function uploadTranscript(file: File): Promise<string[]> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await axios.post(`${API_BASE}/upload-transcript`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return response.data.courses as string[]
 }

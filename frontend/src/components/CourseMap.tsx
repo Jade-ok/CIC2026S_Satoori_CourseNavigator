@@ -1,17 +1,74 @@
-import { useEffect, useRef } from 'react'
-import { connections, nodePositions } from '../data/courses'
+import { useEffect, useRef, useMemo } from 'react'
 import { type Course } from '../api/courses'
 
 interface Props {
   revealed: boolean
   onCourseClick: (id: string) => void
-  courses: Record<string, Course & { status?: string; badge?: string }>
+  courses: Record<string, Course>
   courseStates?: Record<string, string>
+  completedCourses?: string[]
 }
 
-export default function CourseMap({ revealed, onCourseClick, courses, courseStates = {} }: Props) {
+export default function CourseMap({ revealed, onCourseClick, courses, courseStates = {}, completedCourses = [] }: Props) {
   const ghostSvgRef = useRef<SVGSVGElement>(null)
-  console.log('🗺️ CourseMap rendered, revealed:', revealed, 'courses count:', Object.keys(courses).length, 'courseStates:', courseStates)
+
+  // Which courses to show: AI-classified ones only (when available), otherwise all
+  const visibleKeys = useMemo(() => {
+    const aiKeys = Object.keys(courseStates)
+    if (aiKeys.length > 0) return new Set(aiKeys)
+    return new Set(Object.keys(courses))
+  }, [courses, courseStates])
+
+  // Compute positions and connections dynamically from courses data
+  const { nodePositions, connections, canvasMinHeight } = useMemo(() => {
+    const colXByLevel: Record<number, number> = { 100: 20, 200: 205, 300: 390, 400: 575 }
+
+    // Group visible course keys by level
+    const byLevel: Record<number, string[]> = { 100: [], 200: [], 300: [], 400: [] }
+    for (const key of visibleKeys) {
+      const match = key.match(/\d+/)
+      if (!match) continue
+      const num = parseInt(match[0])
+      const level = Math.floor(num / 100) * 100
+      const col = colXByLevel[level]
+      if (col !== undefined) {
+        byLevel[level].push(key)
+      }
+    }
+
+    // Sort alphabetically within each level
+    for (const level of Object.keys(byLevel)) {
+      byLevel[Number(level)].sort()
+    }
+
+    // Assign positions
+    const positions: Record<string, [number, number]> = {}
+    let maxCount = 0
+    for (const level of [100, 200, 300, 400]) {
+      const keys = byLevel[level]
+      const x = colXByLevel[level]
+      keys.forEach((key, i) => {
+        positions[key] = [x, 60 + i * 90]
+      })
+      if (keys.length > maxCount) maxCount = keys.length
+    }
+
+    // Build connections from prereqs (only between visible courses)
+    const conns: [string, string][] = []
+    for (const key of visibleKeys) {
+      const course = courses[key]
+      if (!course) continue
+      for (const prereq of (course.prereqs ?? [])) {
+        if (visibleKeys.has(prereq)) {
+          conns.push([prereq, key])
+        }
+      }
+    }
+
+    const minHeight = 50 + maxCount * 90 + 100
+
+    return { nodePositions: positions, connections: conns, canvasMinHeight: minHeight }
+  }, [courses, visibleKeys])
 
   useEffect(() => {
     const drawGhostLines = () => {
@@ -45,6 +102,17 @@ export default function CourseMap({ revealed, onCourseClick, courses, courseStat
     window.addEventListener('resize', drawGhostLines)
     return () => { ro.disconnect(); window.removeEventListener('resize', drawGhostLines) }
   }, [])
+
+  const completedSet = new Set(completedCourses)
+
+  function getStatus(code: string, course: Course): string {
+    if (completedSet.has(code)) return 'completed'
+    if (courseStates[code]) return courseStates[code]
+    if (Object.keys(courseStates).length > 0) return 'locked'
+    const prereqs = course.prereqs ?? []
+    if (prereqs.length === 0 || prereqs.every(p => completedSet.has(p))) return 'available'
+    return 'locked'
+  }
 
   return (
     <>
@@ -93,8 +161,8 @@ export default function CourseMap({ revealed, onCourseClick, courses, courseStat
           transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22,1,0.36,1)',
         }}
       >
-        <div className="map-canvas">
-          <svg className="connections-svg">
+        <div className="map-canvas" style={{ minHeight: canvasMinHeight }}>
+          <svg className="connections-svg" style={{ minHeight: canvasMinHeight }}>
             <defs>
               <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
                 <path d="M0,1 L9,5 L0,9" fill="none" stroke="#D1D5DB" strokeWidth="1.5" strokeLinejoin="round" />
@@ -104,14 +172,14 @@ export default function CourseMap({ revealed, onCourseClick, courses, courseStat
               </marker>
             </defs>
             {connections.map(([from, to], i) => {
-              const fp = nodePositions[from], tp = nodePositions[to]
+              const fp = nodePositions[from]
+              const tp = nodePositions[to]
               if (!fp || !tp) return null
               const x1 = fp[0] + 145, y1 = fp[1] + 35
               const x2 = tp[0],       y2 = tp[1] + 35
               const mx = (x1 + x2) / 2
-              const toCode = courses[to]?.code
-              const toState = toCode ? courseStates[toCode] : undefined
-              const active = (toState ?? courses[to]?.status) === 'recommended' || (toState ?? courses[to]?.status) === 'available'
+              const toState = courses[to] ? getStatus(to, courses[to]) : undefined
+              const active = toState === 'recommended' || toState === 'available'
               return (
                 <path key={i}
                   d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
@@ -144,7 +212,7 @@ export default function CourseMap({ revealed, onCourseClick, courses, courseStat
           {Object.entries(nodePositions).map(([id, [left, top]]) => {
             const course = courses[id]
             if (!course) return null
-            const status = courseStates[course.code] || 'locked'
+            const status = getStatus(id, course)
             return (
               <div
                 key={id}
