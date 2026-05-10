@@ -2,15 +2,15 @@
   "ai_ml": {
     "id": "ai_ml",
     "name": "AI / Machine Learning",
-    "description": "Track for ML engineers, AI researchers, and computer vision specialists. Focuses on building, training, and deploying machine learning models.",
+    "description": "Track for ML engineers, AI researchers, and data scientists. Focuses on building, training, and deploying machine learning models. Requires a strong math and statistics foundation.",
     "industry_roles": ["ML Engineer", "AI Researcher", "Data Scientist", "Computer Vision Engineer", "NLP Engineer"],
-    "core_courses": ["CPSC 320", "CPSC 322", "CPSC 340"],
-    "recommended_courses": ["CPSC 330", "CPSC 422", "CPSC 425", "CPSC 440", "CPSC 312"],
-    "math_required": ["MATH 200", "MATH 221", "STAT 251"],
-    "math_recommended": ["STAT 302", "MATH 152"],
-    "intro_friendly": ["CPSC 330"],
+    "core_courses": ["CPSC 330", "CPSC 340", "CPSC 322"],
+    "recommended_courses": ["CPSC 422", "CPSC 425", "CPSC 440", "STAT 306", "STAT 406", "DSCI 310", "DSCI 320", "CPSC 368"],
+    "math_required": ["MATH 200", "MATH 221", "STAT 251", "STAT 302"],
+    "math_recommended": ["STAT 306", "STAT 406", "DSCI 100", "DSCI 200", "DSCI 220", "DSCI 221"],
+    "intro_friendly": ["CPSC 330", "DSCI 100"],
     "advanced": ["CPSC 440", "CPSC 425", "CPSC 422"],
-    "skills_gained": ["Probabilistic models", "Deep learning", "Computer vision", "Bayesian inference", "Feature engineering", "Model evaluation"]
+    "skills_gained": ["Probabilistic models", "Deep learning", "Computer vision", "Bayesian inference", "Feature engineering", "Model evaluation", "Statistical inference", "Data wrangling"]
   },
   "data_science": {
     "id": "data_science",

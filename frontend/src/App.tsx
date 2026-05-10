@@ -67,7 +67,7 @@ export default function App() {
         </main>
       </div>
 
-      <DetailPanel courseId={selectedCourse} onClose={() => setSelectedCourse(null)} courses={courses} />
+      <DetailPanel courseId={selectedCourse} onClose={() => setSelectedCourse(null)} courses={courses} courseStates={courseStates} />
     </>
   )
 }

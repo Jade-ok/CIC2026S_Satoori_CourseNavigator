@@ -18,17 +18,32 @@ All UBC CS courses and their prereqs: {all_courses}
 
 {career_track_hint}
 
-Classify EVERY course above into exactly one state:
-- "completed": already in the student's completed list
-- "recommended": 2-3 courses that best match the student's goal AND all prereqs are met
-- "available": prereqs met but not the top picks for their goal
-- "locked": at least one prereq is missing
+IMPORTANT:
+- Also scan the student's goal text for any courses they mention having completed (e.g. "I took MATH 221", "already have CPSC 110"). Merge those into the completed set.
+- If a course is completed, treat all of its prerequisites as already satisfied when determining what is "available" or "locked" — but do NOT add those inferred prerequisites to course_states unless they are explicitly in the student's completed courses list. A student who completed MATH 221 has already passed its prereqs — don't clutter the map by listing MATH 100 or MATH 101 as separate nodes.
+
+Your task:
+1. Pick 2-3 courses that BEST match the student's goal AND have all prereqs met → "recommended"
+2. Only include courses that are directly on the path to the student's goal:
+   - The recommended courses themselves
+   - ALL direct prerequisites of recommended courses that are NOT yet completed — including MATH, STAT, and DSCI courses
+   - The student's completed courses that are direct prerequisites of a recommended course
+3. Do NOT omit MATH/STAT prerequisites of recommended courses — they are critical for ML/AI/Data Science tracks.
+4. Do NOT include courses unrelated to the student's goal.
+5. Do NOT include prerequisites of already-completed courses — if a course is completed, its prereqs are irrelevant.
+
+Each included course gets exactly one state:
+- "completed": in the student's completed list OR mentioned as completed in their goal text
+- "recommended": top 2-3 picks for their goal, prereqs met
+- "available": direct prereq of a recommended course, prereqs met, not yet completed
+- "locked": direct prereq of a recommended course, but missing its own prereq
 
 Return ONLY this exact JSON (no markdown, no code fences):
 {{
   "message": "2-3 sentence warm response in the same language as the student's goal. Mention their goal and top recommended course.",
   "course_states": {{
-    "CPSC 110": "completed"
+    "CPSC 110": "completed",
+    "CPSC 344": "recommended"
   }},
   "recommended_courses": [
     {{"code": "CPSC XXX", "reason": "One sentence: why it fits their goal and prereqs are met."}}
@@ -36,8 +51,8 @@ Return ONLY this exact JSON (no markdown, no code fences):
 }}
 
 Rules:
-- course_states MUST include ALL courses listed above, no exceptions
-- recommended_courses must have exactly 2-3 entries matching the "recommended" state
+- Only include courses on the student's goal path — omit everything else
+- recommended_courses must have exactly 2-3 entries
 - If student writes in Korean, respond in Korean in the message field
 """
 
@@ -96,15 +111,21 @@ def _build_career_track_hint(user_context: str, tracks: dict) -> str:
     track = _match_track(user_context, tracks)
     if not track:
         return ""
+    name = track.get("name", "")
     core = track.get("core_courses", [])
     recommended = track.get("recommended_courses", [])
-    name = track.get("name", "")
+    math_required = track.get("math_required", [])
+    math_recommended = track.get("math_recommended", [])
     parts = [f'Career track hint — "{name}":']
     if core:
         parts.append(f"  Core courses: {', '.join(core)}")
     if recommended:
         parts.append(f"  Recommended courses: {', '.join(recommended)}")
-    parts.append("Use these as strong hints when selecting recommended courses (if prereqs are met).")
+    if math_required:
+        parts.append(f"  Required math/stats: {', '.join(math_required)} — MUST include these as prereqs if not completed")
+    if math_recommended:
+        parts.append(f"  Recommended math/stats: {', '.join(math_recommended)}")
+    parts.append("Use these as strong hints. Always include MATH/STAT prerequisites in the course map — they are essential for this track.")
     return "\n".join(parts) + "\n"
 
 
