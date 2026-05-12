@@ -18,7 +18,7 @@ Team members came in with frontend and backend experience but no prior AWS expos
 
 ![Architecture Planning Diagram](image.png)
 
-*Planned architecture at the start of the hackathon. Not all components were implemented — Amazon Amplify was replaced by a local Vite dev server, DynamoDB was not integrated, and the Reddit/UBC Event Calendar data sources ended up as static mock data. The Bedrock Knowledge Base was implemented as a fallback tier in the backend.*
+*Planned architecture at the start of the hackathon. Not all components were implemented — Amazon Amplify was replaced by a local Vite dev server, DynamoDB was not integrated, and the Reddit/UBC Event Calendar data sources ended up as static mock data.*
 
 ---
 

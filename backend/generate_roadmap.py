@@ -1,18 +1,24 @@
 import json
+import os
 import boto3
 
 bedrock_client = boto3.client(service_name='bedrock-runtime', region_name='us-west-2')
+bedrock_agent_client = boto3.client("bedrock-agent-runtime", region_name='us-west-2')
 s3_client = boto3.client('s3', region_name='us-west-2')
 
-S3_BUCKET = "course-nav-uploads-jinok"
+S3_BUCKET = os.environ.get("S3_BUCKET", "course-nav-uploads-jinok")
 S3_KEY = "courses.json"
 S3_CAREER_TRACKS_KEY = "career_tracks.json"
+KB_ID = os.environ.get("BEDROCK_KB_ID", "")
 
 SYSTEM_PROMPT = "You are a UBC academic advisor. Return ONLY valid JSON with no markdown, no code blocks, no extra text."
 
 USER_PROMPT = """\
 Student's completed courses: {completed_courses}
 Student's goal: "{user_context}"
+
+Relevant course content from UBC syllabi (retrieved from Knowledge Base):
+{kb_context}
 
 All UBC CS courses and their prereqs: {all_courses}
 
@@ -57,6 +63,31 @@ Rules:
 """
 
 
+def _retrieve_from_kb(user_context: str) -> str:
+    """Retrieve relevant syllabus content from Bedrock Knowledge Base.
+
+    RAG step: search indexed UBC syllabus PDFs for content semantically related
+    to the student's career interest, then inject retrieved snippets into the
+    Claude prompt so recommendations are grounded in actual course content.
+
+    Degrades gracefully — returns empty context string if KB_ID is not set or
+    retrieval fails, so the handler falls back to metadata-only mode.
+    """
+    if not KB_ID:
+        return "No syllabus context available."
+    try:
+        response = bedrock_agent_client.retrieve(
+            knowledgeBaseId=KB_ID,
+            retrievalQuery={"text": user_context},
+            retrievalConfiguration={"vectorSearchConfiguration": {"numberOfResults": 8}},
+        )
+        snippets = [r["content"]["text"] for r in response.get("retrievalResults", [])]
+        return "\n\n".join(snippets) if snippets else "No relevant syllabus content found."
+    except Exception as e:
+        print(f"KB retrieval failed: {e}")
+        return "Syllabus context unavailable."
+
+
 def _load_courses_from_s3():
     obj = s3_client.get_object(Bucket=S3_BUCKET, Key=S3_KEY)
     data = json.loads(obj["Body"].read())
@@ -75,22 +106,20 @@ def _load_career_tracks_from_s3():
 
 
 def _match_track(user_context: str, tracks: dict) -> dict | None:
-    """Return the best matching career track based on keyword matching."""
     if not tracks:
         return None
 
     text = user_context.lower()
 
-    # Keyword sets for each track id
+    # Keys match career_tracks.json IDs exactly
     keywords: dict[str, list[str]] = {
-        "ai_ml":         ["ai", "machine learning", "ml", "deep learning", "neural", "data science", "nlp", "computer vision"],
-        "hci_design":    ["hci", "human computer", "ux", "ui", "design", "interface", "usability", "interaction"],
-        "software_eng":  ["software engineering", "software engineer", "swe", "backend", "frontend", "full stack", "web dev", "systems"],
-        "security":      ["security", "cybersecurity", "cryptography", "hacking", "network security", "privacy"],
-        "graphics":      ["graphics", "game", "rendering", "animation", "visual", "opengl", "3d"],
-        "theory":        ["theory", "algorithms", "complexity", "theoretical", "math", "formal"],
-        "systems":       ["systems", "operating system", "os", "distributed", "parallel", "compiler", "embedded"],
-        "data":          ["data", "database", "analytics", "big data", "sql", "data engineer"],
+        "ai_ml":          ["ai", "machine learning", "ml", "deep learning", "neural", "data science", "nlp", "computer vision"],
+        "hci_design":     ["hci", "human computer", "ux", "ui", "design", "interface", "usability", "interaction"],
+        "web_dev":        ["software engineering", "software engineer", "swe", "backend", "frontend", "full stack", "web dev", "web development"],
+        "security":       ["security", "cybersecurity", "cryptography", "hacking", "network security", "privacy"],
+        "graphics_games": ["graphics", "game", "rendering", "animation", "visual", "opengl", "3d"],
+        "systems":        ["systems", "operating system", "os", "distributed", "parallel", "compiler", "embedded"],
+        "data_science":   ["data", "database", "analytics", "big data", "sql", "data engineer"],
     }
 
     best_track_id = None
@@ -144,13 +173,22 @@ def lambda_handler(event, context):
         completed_courses = body.get("completedCourses", [])
         user_context = body.get("userContext", "I want to get a software engineering job.")
 
+        # Step 1: RAG — retrieve relevant syllabus content from Knowledge Base.
+        # The KB indexes actual UBC course syllabi as PDFs. Searching with the
+        # student's career interest grounds Claude's recommendations in real
+        # course content rather than just structured metadata.
+        kb_context = _retrieve_from_kb(user_context)
+
+        # Step 2: Load structured metadata from S3 (course codes, prereqs, track hints).
         all_courses = _load_courses_from_s3()
         career_tracks = _load_career_tracks_from_s3()
         career_track_hint = _build_career_track_hint(user_context, career_tracks)
 
+        # Step 3: Build prompt with KB context + metadata, then invoke Claude.
         prompt = USER_PROMPT.format(
             completed_courses=completed_courses or ["none"],
             user_context=user_context,
+            kb_context=kb_context,
             all_courses=json.dumps(all_courses),
             career_track_hint=career_track_hint,
         )
